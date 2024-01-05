@@ -138,8 +138,9 @@ SUM(discontinued) as total_discontinued
 FROM products;
 
 
-
-
+-- Select the most recent record by id to display it.
+select * from patients
+	where patient_id = (select max(patient_id) from patients);
 
 
 
