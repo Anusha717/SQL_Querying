@@ -1,0 +1,164 @@
+SELECT * FROM patients
+Q) Show first name, last name, and gender of patients whose gender is 'M'
+SELECT
+  first_name,
+  last_name,
+  gender
+FROM patients
+WHERE gender = 'M';
+
+Q)Show first name and last name of patients who does not have allergies. (null)
+SELECT
+  first_name,
+  last_name
+FROM patients
+WHERE allergies IS NULL;
+
+Q) Show first name and last name of patients weight within range of 100 to 120
+
+SELECT
+  first_name,
+  last_name
+FROM patients
+WHERE weight between 100 and 120
+
+Q) Show first name of patients that start with the letter 'C'
+select
+  first_name 
+from patients 
+where first_name like 'C%'
+
+Q)Update the patients table for the allergies column. If the patient's allergies is null then replace it with 'NKA'
+UPDATE patients
+SET allergies = 'NKA'
+WHERE allergies IS NULL;
+
+Q)Show first name and last name concatinated into one column to show their full name.
+SELECT
+  CONCAT(first_name, ' ', last_name) AS full_name
+FROM patients;
+
+SELECT first_name || ' ' || last_name
+FROM patients;
+
+Q) Show first name, last name, and the full province name of each patient.
+SELECT
+  first_name,
+  last_name,
+  province_name
+FROM patients
+  JOIN province_names ON province_names.province_id = patients.province_id;
+
+Q)Show how many patients have a birth_date with 2010 as the birth year.
+
+select count(patient_id) from patients where year(birth_date)=2010
+
+SELECT COUNT(*) AS total_patients
+FROM patients
+WHERE YEAR(birth_date) = 2010;
+
+SELECT count(first_name) AS total_patients
+FROM patients
+WHERE
+  birth_date >= '2010-01-01'
+  AND birth_date <= '2010-12-31'
+
+
+Q) Show the first_name, last_name, and height of the patient with the greatest height.
+select first_name,last_name,height from patients order by height desc limit 1
+
+SELECT
+  first_name,
+  last_name,
+  height
+FROM patients
+WHERE height = (
+    SELECT max(height)
+    FROM patients
+  )
+
+SELECT
+  first_name,
+  last_name,
+  MAX(height) AS height
+FROM patients;
+
+
+Q) Show all columns for patients who have one of the following patient_ids: 1,45,534,879,1000
+SELECT *
+FROM patients
+WHERE
+  patient_id IN (1, 45, 534, 879, 1000);
+
+
+
+-------------------------------
+select * from admissions where admission_date = discharge_date
+select patient_id,count(admission_date) from admissions where patient_id=579
+select distinct city  from patients where province_id ='NS'
+
+select first_name,last_name,birth_date from patients where height>160 and weight>70
+
+select first_name,last_name,allergies  from patients
+where allergies not NULL and city = 'Hamilton'
+
+select category_name,description from categories order by category_name;
+
+SELECT contact_name, address, city
+FROM customers
+WHERE Country NOT IN ('Germany','Mexico', 'Spain')
+
+select order_date,shipped_date,customer_id,freight from orders 
+where order_date ='2018-02-26'  
+
+select employee_id,order_id,customer_id,required_date,shipped_date
+from orders where shipped_date > required_date
+
+select order_id from orders where order_id%2=0
+select order_id from orders where mod(order_id,2)=0
+
+select city,company_name,contact_name from customers 
+where city like '%L%' order by contact_name 
+
+select company_name,contact_name,fax 
+from customers where fax is NOT NULL
+
+Q) Show the first_name, last_name. hire_date of the most recently hired employee.
+Solution
+SELECT 
+    first_name,
+    last_name,
+    MAX(hire_date) AS hire_date
+  FROM employees
+
+Q)Show the average unit price rounded to 2 decimal places, the total units in stock, total discontinued products from the products table.
+SELECT round(avg(Unit_Price), 2) AS average_price,
+SUM(units_in_stock) AS total_stock,
+SUM(discontinued) as total_discontinued
+FROM products;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
