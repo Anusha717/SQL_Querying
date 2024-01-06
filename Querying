@@ -142,6 +142,194 @@ FROM products;
 select * from patients
 	where patient_id = (select max(patient_id) from patients);
 
+------------------------------------
+Topic:FILTERING
+Operators: AND,OR,NOT
+ORDER BY ASC|DESC
+LIKE %, _
+IN, NOT IN
+BETWEEN AND
+JOIN: INNER,LEFT,FULL OUTER
+UNION,UNION ALL(Duplicate)
+GROUP BY
+HAVING (with aggregates)
+CASE
+
+SELECT patient_id, height,
+  CASE
+      WHEN height > 175 THEN 'height is greater than 175'
+      WHEN height = 175 THEN 'height is 175'
+      ELSE 'height is under 175'
+  END AS height_group
+  FROM patients;
+
+The following SQL will order the patients by allergies. However, if allergies is NULL, then order by patient_id:
+
+SELECT patient_id, first_name, allergies
+  FROM patients
+  ORDER BY
+  (CASE
+      WHEN allergies IS NULL THEN first_name
+      ELSE allergies
+  END);
+
+DISTINCT
+SELECT COUNT(DISTINCT first_name) FROM patients;
+
+EXISTS
+-> SQL statement returns all patients which was diagnosed with pregnancy.
+
+SELECT * FROM patients 
+  WHERE EXISTS (SELECT diagnosis FROM admissions 
+      WHERE patients.patient_id = admissions.patient_id 
+      AND diagnosis = 'Pregnancy')
+
+-> SQL statement can be written more efficently:
+
+SELECT * FROM patients 
+  JOIN admissions ON patients.patient_id = admissions.patient_id
+  WHERE diagnosis = 'Pregnancy'
+
+
+ANY, ALL
+IFNULL(), ISNULL(), COALESCE(), and NVL() Functions
+MySQL: IFNULL() function lets you return an alternative value if an expression is NULL:
+
+SELECT first_name, IFNULL(allergies,'none') AS allergies 
+FROM patients
+
+or 
+
+SELECT first_name, COALESCE(allergies,'none') AS allergies 
+FROM patients
+
+SQL Server: ISNULL() function lets you return an alternative value when an expression is NULL:
+
+SELECT first_name, IFNULL(allergies,'none') AS allergies 
+FROM patients
+
+MS Access: IsNull() function returns TRUE (1) if the expression is a null value, otherwise FALSE (0):
+
+SELECT first_name, IIF(ISNULL(allergies,0),allergies) AS allergies 
+FROM patients
+
+Oracle: NVL() function achieves the same result:
+
+SELECT first_name, NVL(allergies,'none') AS allergies 
+FROM patients
+
+IS NULL, IS NOT NULL
+ALIASES: FOR COLUMN, TABLE: AS KEYWORD
+-----------------------------------
+FUNCTIONS:
+1.AGGREGATE FUNCTIONS: MIN(),MAX(),SUM(),AVG(),COUNT()
+2.STRING FUNCTIONS: CONCAT(),LEN(),UPPER(),LOWER()
+3.NUMERIC: 	3.1 RAND(),
+		3.2 ROUND(): Round(number, decimAls): : SELECT ROUND(135.375, 2); O/P:135.38  ,
+		3.3 FLOOR(): ROUNDED DOWN :: SELECT FLOOR(25.9); O/P: 25  ,
+		3.4 CEIL(): ROUNDED UP :: SELECT CEIL(25.1); O/P:26
+		3.5. MATH:
+			3.5.1 ABS : SELECT ABS(-362.3); O/P: 362.3
+			3.5.2 POWER: POWER(base, exponent)::  SELECT POWER(8, 3); O/P:512
+			3.5.3 SQRT : SELECT SQRT(16); O/P:4
+4.DATE FUNCTIONS:
+		4.1 YEAR(): SELECT year(current_timestamp)
+		4.2 MONTH(): SELECT MONTH(current_timestamp)
+		4.3 DAY() : SELECT DAY(current_timestamp)
+		4.4 CURRENT_TIMESTAMP function returns the current date and time as "YYYY-MM-DD HH-MM-SS" (string)
+			SELECT CURRENT_TIMESTAMP;
+
+5. WINDOW FUNCTIONS: 
+
+SQL window function types:
+5.1.Value window functions
+
+			FIRST_VALUE()
+			LAST_VALUE()
+			LAG():PREVIOUS: Lag(expression [, offset])  
+				EX:     select patient_id,first_name,
+					  lag(first_name, 1) over() as previous_name
+					from patients
+					O/P:TABLE
+					patient_id  first_name  previous_name
+						1	Donald	NULL
+						2	Mickey	Donald
+						3	Jiji	Mickey
+						4	Blair	Jiji
+			LEAD(): NEXT: Lead(expression [, offset])
+				select patient_id,first_name,
+					  lead(first_name, 1) over() as next_name
+					from patients
+				O/P:TABLE
+					patient_id  first_name  next_name
+						1	Donald	Mickey
+						2	Mickey	Jiji
+						3	Jiji	Blair
+						4	Blair	Charles
+						5	Charles	 Sue
+5.2 Ranking window functions
+
+			CUME_DIST()
+			DENSE_RANK()
+			NTILE()
+			PERCENT_RANK()
+			RANK()
+			ROW_NUMBER()
+5.3 Aggregate window functions
+
+			AVG() EXAMPLE: AVG() AS WINDOW FUNCTION
+					SELECT 
+					    first_name,
+					    last_name,
+					    weight,
+					    AVG(weight) OVER() as avg_weight
+					FROM
+					    patients;
+			COUNT()
+			MAX()
+			MIN()
+			SUM()
+
+
+WINDOW FUNCTION RESULT: FILTERING " WITH " KEYWORD . CANT USE WHERE OR HAVING CLAUSE
+ To filter by the column you must separate the results as a table using the WITH keyword.
+
+with rolling_sum_table as (
+    select
+      patient_id,
+      first_name,
+      weight,
+      sum(weight) over(order by patient_id) as rolling_sum
+    from patients
+  )
+SELECT *
+from rolling_sum_table
+where rolling_sum < 1000
+
+-------------------------------
+TABLE
+
+ALTER- ADD, DROP,MODIFY/ALTER COLUMNS & ALSO CONSTARINTS OF EXISTING TABLE
+ADD COLUMN		-> ALTER TABLE table_name ADD column_name datatype;
+DROP COLUMN		-> ALTER TABLE table_name DROP COLUMN column_name;
+CHANGE DATATYPE:	SQL Server / MS Access: ALTER TABLE table_name ALTER COLUMN column_name datatype;
+			My SQL / Oracle: 	ALTER TABLE table_name MODIFY COLUMN column_name datatype;
+
+
+
+CONSTRAINTS:
+NOT NULL - Ensures that a column cannot have a NULL value
+UNIQUE - Ensures that all values in a column are different
+PRIMARY KEY - A combination of a NOT NULL and UNIQUE. Uniquely identifies each row in a table
+FOREIGN KEY - Prevents actions that would destroy links between tables
+CHECK - Ensures that the values in a column satisfies a specific condition
+DEFAULT - Sets a default value for a column if no value is specified
+
+CONSTRAINT UC_Person UNIQUE (ID,LastName)
+ALTER TABLE Persons ADD CONSTRAINT UC_Person UNIQUE (ID,LastName);
+ALTER TABLE Persons DROP CONSTRAINT UC_Person UNIQUE (ID,LastName);
+
+
 
 
 
