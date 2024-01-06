@@ -329,7 +329,51 @@ CONSTRAINT UC_Person UNIQUE (ID,LastName)
 ALTER TABLE Persons ADD CONSTRAINT UC_Person UNIQUE (ID,LastName);
 ALTER TABLE Persons DROP CONSTRAINT UC_Person UNIQUE (ID,LastName);
 
+--------------------------------------
+SELECT * FROM patients
+select distinct year(birth_date) as birth_year from patients 
+order by YEAR(birth_date) asc 
 
+select first_name from patients group by first_name having count(first_name)=1
+
+select patient_id,first_name from patients where first_name like 's__%__s'
+SELECT
+  patient_id,
+  first_name
+FROM patients
+WHERE
+  first_name LIKE 's%s'
+  AND len(first_name) >= 6;
+  
+  
+ select p.patient_id,p.first_name,p.last_name from patients p join admissions a
+on p.patient_id = a.patient_id where a.diagnosis = 'Dementia'
+  
+  SELECT
+  patient_id,
+  first_name,
+  last_name
+FROM patients
+WHERE patient_id IN (
+    SELECT patient_id
+    FROM admissions
+    WHERE diagnosis = 'Dementia'
+  );
+  
+  
+  select first_name from patients order by len(first_name),first_name
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
 
 
