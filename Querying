@@ -539,13 +539,157 @@ from patients
 where admissions.patient_id is NULL
 
 
+select product_name,company_name,category_name from 
+categories c Join products p on c.category_id=p.category_id
+join suppliers s on p.supplier_id = s.supplier_id
 
+Q)Show the category_name and the average product unit price for each category rounded to 2 decimal places.
+select category_name,Round (avg(unit_price),2) avg_unit_price 
+from categories c join products p
+on c.category_id=p.category_id group by category_name
   
   
   
+  SELECT 
+(select count(*)  from patients where gender= 'M') as male_count,
+(select count(*) from patients where gender= 'F') as female_count;
+
+select
+sum(gender='M') as male_count,
+sum(gender='F') as female_count from patients;
+
+select
+sum(case when gender='M' Then 1 END) as male_count,
+sum(case when gender='F' Then 1 END) as female_count from patients;
+
+select first_name,last_name,allergies from patients 
+where allergies IN ('Penicillin','Morphine') 
+order by allergies,first_name,last_name
+
+select patient_id,diagnosis from admissions 
+group by patient_id,diagnosis having count(*)>1
+
+select * from patients
+select city, count(patient_id) as num_of_patients from patients 
+group by city order by num_of_patients desc , city asc
+
+select first_name,last_name, 'Patient' as role from patients
+Union all
+select first_name,last_name, 'Doctor' as role  from doctors;
+
+
+select allergies, COUNT(*) AS total_diagnosis from patients 
+where allergies not null 
+group by allergies order by total_diagnosis desc
+
+select first_name,last_name,birth_date from patients 
+where year(birth_date) between 1970 and 1979 order by birth_date asc 
+
+SELECT
+  first_name,
+  last_name,
+  birth_date
+FROM patients
+WHERE year(birth_date) LIKE '197%'
+ORDER BY birth_date ASC
+
+SELECT
+  first_name,
+  last_name,
+  birth_date
+FROM patients
+WHERE
+  birth_date >= '1970-01-01'
+  AND birth_date < '1980-01-01'
+ORDER BY birth_date ASC
+
+select concat(upper(last_name),',',lower(first_name)) as new_name_format from patients
+order by first_name desc
+
+SELECT
+  UPPER(last_name) || ',' || LOWER(first_name) AS new_name_format
+FROM patients
+ORDER BY first_name DESC;
+
+select province_id,sum(height) as tot_height from patients  group by province_id
+having tot_height >= 7000
   
-  
-  
+select * from patients
+select (max(weight)-min(weight)) as weight_difference 
+from patients where last_name='Maroni'
+
+select day(admission_date) as daynum,count(*) as admissions_cnt from admissions
+group by daynum order by admissions_cnt desc
+
+select * from admissions where patient_id=542 
+group by patient_id having max(admission_date)
+
+select patient_id,attending_doctor_id,diagnosis from admissions 
+where patient_id%2=1 and attending_doctor_id in (1,5,19)
+OR len(patient_id)=3 and attending_doctor_id like '%2%'
+
+
+select first_name,last_name,count(*) tot_admissions 
+from admissions join doctors 
+on admissions.attending_doctor_id=doctors.doctor_id
+group by doctors.doctor_id
+
+select d.doctor_id,concat(d.first_name,' ',d.last_name) as full_name,
+MIN(admission_date) as first_admission ,Max(admission_date) as last_admission
+from doctors d join admissions a 
+on a.attending_doctor_id=d.doctor_id  group by d.doctor_id
+
+select pn.province_name ,count(*) as patient_cnt 
+from patients p join province_names pn
+on p.province_id=pn.province_id 
+group by pn.province_name order by patient_cnt desc
+
+select p.first_name|| ' ' || p.last_name as patient_name,
+a.diagnosis ,d.first_name|| ' ' || d.last_name as doctor_name
+from patients p 
+join admissions a on p.patient_id=a.patient_id  
+join doctors d on a.attending_doctor_id=d.doctor_id
+
+select first_name,last_name,count(*) Noof_duplicate_patients from patients
+group by first_name,last_name
+having  count(*)>1
+
+select * from patients;
+select concat(first_name,' ',last_name) as full_name,
+Round(height/30.48,1) as height_units,Round(weight*2.205,0) as weight_pounds,birth_date,
+(case when gender='M' then 'MALE' else 'FEMALE' end) gender_type
+from patients;
+
+select patient_id,first_name,last_name from patients  where patient_id 
+not in (select patient_id from admissions)
+
+
+select product_name,company_name,category_name from 
+categories c Join products p on c.category_id=p.category_id
+join suppliers s on p.supplier_id = s.supplier_id
+
+select category_name,Round (avg(unit_price),2) avg_unit_price 
+from categories c join products p
+on c.category_id=p.category_id group by category_name
+
+Q)Show the city, company_name, contact_name from the customers and suppliers table merged together.
+Create a column which contains 'customers' or 'suppliers' depending on the table it came from.
+
+select city,company_name,contact_name,'customers' as relationship
+from customers
+union
+select city,company_name,contact_name,'suppliers' as relationship
+from suppliers
+
+
+
+
+
+
+
+
+
+
   
   
   
