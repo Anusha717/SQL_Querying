@@ -459,11 +459,49 @@ select * from csvfileloadtable
 sp_help csvfileloadtable 
 
 =====================================================================================================================================================
---Tricky questions
+--i/p:Anusha ;; count repeatable characters,a->2 times repeated7
+declare @inp as varchar(10)
+set @inp='JANAGANAMANAADINYAKAJAYAHEY'
+select len(@inp) as inplength
+select len(replace(@inp,'N','')) as replacedlength
+select len(@inp)-len(replace( @inp,'N','')) as repeatedcharlength
+
+
+--print characters in verticak-transpoese of text
+
+declare @strng as varchar(10)='jakkula'
+declare @countt as int =1
+declare @total as int = len(@strng)
+while @countt <= @total
+begin
+print substring(@strng,@countt,1)
+set @countt = @countt + 1
+end
+------------------------
+--print 1 to 100: when we know range -> use for loop othertime while loop;; uisng cte instead of loops
+declare @start int =1
+while @start < = 100
+begin
+print @start
+set @start=@start+1
+end
+
+with cteforloops as (
+select 1 startpos
+union all
+select startpos+1 from cteforloops           
+where startpos<20
+)
+select * from cteforloops
 
 
 
- 
+
+
+
+
+
+
 
 
 
