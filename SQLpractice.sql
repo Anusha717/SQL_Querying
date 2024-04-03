@@ -165,6 +165,313 @@ intersect
 select stmt
 
 --sql
+use practicedb
+select * from factinternetsales
+select max(TaxAmt),min(TaxAmt),avg(TaxAmt) from factinternetsales
+select orderdate,max(UnitPrice) as maxprice,min(UnitPrice) as minprice from factinternetsales group by orderdate
+select * from dimcustomer
+select avg(yearlyincome),englisheducation from dimcustomer group by englisheducation having EnglishEducation='High School'
+select * from factcallcenter
+select sum(issuesraised) totalissues from factcallcenter where WageType='holiday'
+select wagetype,issuesraised  from factcallcenter  where WageType='holiday'
+--list all object names & types
+select distinct type,type_desc from sys.objects order by 10
+
+------------------------------------------------------------------------------------
+select * from dimemployee
+select (birthdate),year(birthdate),month(birthdate),day(birthdate),datename(dw,birthdate) from dimemployee
+select employeekey,firstname,hiredate,enddate,datediff(year, startdate,coalesce(enddate, GETDATE())) 
+from dimemployee where datediff(year, startdate,coalesce(enddate, GETDATE())) >5
+select birthdate , datediff(year,birthdate,getdate()) as age from dimemployee where datediff(year,birthdate,getdate())>30
+
+--firstpurchase by customers on firstdate 
+select top 5 * from dimcustomer order by datefirstpurchase asc 
+-- customers firstpurchase  on firstdate 
+declare @dateofpurchase as datetime
+select @dateofpurchase=Min(datefirstpurchase) from dimcustomer
+select * from dimcustomer where DateFirstPurchase= @dateofpurchase
+--split column value bfore + symbol
+select frencheducation , substring(frencheducation,1,charindex('+',frencheducation)-1) as new_column from dimcustomer where frencheducation like '%+%'
+--add new column and update fullname for males only
+select concat(FirstName,' ',LastName)as full_name,* from dimcustomer where Gender='M'
+alter table dimcustomer add full_name varchar(30)
+update dimcustomer set full_name= concat(FirstName,' ',LastName) where Gender='M'
+--find monthly income from yearly income column
+select (YearlyIncome/12) as monthly_income , YearlyIncome from dimcustomer
+--query to find age of employee when joined organization
+select * from dimemployee
+select hiredate,birthdate,datediff(year,birthdate,hiredate) as age from dimemployee
+--first 10 letters from address,length of address
+select addressline1,left(addressline1,10) ,len(addressline1) as lengthh from dimcustomer
+select * from dimcustomer;
+select max(YearlyIncome) as maximum, min(YearlyIncome) as minimum from dimcustomer where englishoccupation='Management';
+
+select * from dimcustomer;
+---avg yearly income of customer 
+select avg(YearlyIncome) as avg_yearly_income,spanishOccupation from dimcustomer group by spanishOccupation having spanishOccupation = 'Gestión'
+--total bachelors in EnglishEducation
+select count(1) as total_bachelors,EnglishEducation from dimcustomer group by EnglishEducation having EnglishEducation='Bachelors';
+--7th highest yearly income
+select YearlyIncome,income_ranking,* from ( select *,dense_rank() over(order by YearlyIncome desc) as income_ranking
+from dimcustomer ) as tb7 where income_ranking=7 ;
+--6th highest yearly income for bachelors customers
+select YearlyIncome,income_ranking,EnglishEducation,* from ( select *,dense_rank() over(partition by EnglishEducation order by YearlyIncome desc) as income_ranking
+from dimcustomer ) as tb8 where income_ranking=6 and EnglishEducation= 'Bachelors' ;
+--list customers dont have middle name
+select Firstname,LastName,MiddleName from dimcustomer where ISNULL (MiddleName,'')=''
+--set9: stored procedure
+
+create procedure s_p
+as 
+begin
+	select * from dimcustomer;
+end;
+
+exec s_p
+
+create procedure s_p_with_parameters
+@firstnme as varchar(20),
+@lastnme as varchar(20)
+as 
+begin
+	select * from dimcustomer where firstname=@firstnme and lastname=@lastnme;
+end;
+drop procedure s_p_with_parameters
+
+declare @fname as varchar(20),@lname as varchar(20)
+select @fname=firstname,@lname=lastname from dimcustomer where customerkey=11000
+exec s_p_with_parameters @fname,@lname
+
+--validate parameters in stored procedure
+select * from dimcustomer
+
+create procedure s_p_validation(@occupation varchar(40))
+as
+begin
+set nocount on
+if (charindex(',',@occupation)>0)
+--begin
+print 'error provide single value'
+--return
+--end
+
+if not exists (select 1 from dimcustomer where englishoccupation=@occupation)
+--begin 
+print 'provide correct values like  Management,Skilled Manual ,Clerical ,Professional '
+--return
+--end
+
+select englishoccupation,count(1) as total
+from dimcustomer group by englishoccupation having englishoccupation=@occupation
+end
+
+exec s_p_validation 'Professional'
+exec s_p_validation 'Professionall'
+exec s_p_validation 'Professional, Management'
+drop proc s_p_validation
+select 1,* from dimcustomer where englishoccupation='professional'
+--exception handling
+begin try  end try
+begin catch end catch
+--optional parameters . assigning null or default value so that passing parameters while calling is optional
+
+create procedure s_p1(@param1 varchar(10)=Null,@param2 int =0,@param3 varchar(5)='N/A')
+as 
+begin
+	select @param1 as name,@param2 as dob ,@param3 as available
+end
+drop proc s_p1
+exec s_p1 --optional 
+exec s_p1 'anu',17,'yes'--providing all values
+exec s_p1 'anu',17
+
+
+
+/*Develop a stored procedure based on the below requirements.
+1. Input parameter is Gender and must pass single value if the user passes
+multiple values than will pre-validate the SP and throw an error.
+2. If TotalChildren column value is greater than or equal to 3 than update
+YearlyIncome with double */
+
+if exists (Select null from dbo.SysObjects where name = N'UpdatebyGender' and
+type = N'P')
+Begin
+Drop Proc dbo.UpdatebyGender
+End
+Go
+Create Proc dbo.UpdatebyGender(
+                @Gender varchar(10)
+				)
+As
+Begin
+
+if CHARINDEX(',',@Gender)>0
+Begin
+    Print'Invalid Parameter'
+	return
+end
+
+Create table #dimcustomer_dup (id int identity, Customerkey int, Yearlyincome money , Totalchildren int )
+Insert into #dimcustomer_dup (Customerkey,Yearlyincome,Totalchildren)
+Select Customerkey,Yearlyincome,Totalchildren
+from dimcustomer_dup Where Gender = @Gender
+
+create index IX_#dimcustomer_dup on #dimcustomer_dup(Customerkey)
+
+--Create table #dimcustomer_Result (Customerkey int, Yearlyincome_OLD money ,Yearlyincome_new money, Totalchildren int )
+
+
+Declare @min int, @max int,@Yearlyincome money, @Totalchildren int, @Customerkey int
+
+Select @min = min(ID), @max = max(ID) from #dimcustomer_dup
+
+While @max >= @min
+  Begin 
+   --set @Customerkey = null
+   Set @Yearlyincome  = null
+   set @Totalchildren = null
+   Select @Customerkey = Customerkey,@Yearlyincome = Yearlyincome,@Totalchildren = Totalchildren from #dimcustomer_dup where id = @min
+
+  If @Totalchildren >=3
+    Begin
+	     BEGIN TRY
+		   BEGIN TRANSACTION 
+		  --  SELECT 1/0
+		   ----update statement
+	     Update dimcustomer_dup Set Yearlyincome = 2*@Yearlyincome  Where Customerkey = @Customerkey
+
+  commit transaction
+  
+  Print'Script updated seccessfully'
+
+ End Try
+    Begin Catch
+	  Rollback Tran
+	        Print '   ERNumber: ' + CAST(ERROR_NUMBER() as varchar)
+			Print '   Error_Severity: ' + CAST(ERROR_SEVERITY() as varchar)
+			Print '   Error_State : ' + CAST(ERROR_STATE() as varchar)
+			Print '   Error_Procedure: ' + CAST(ERROR_PROCEDURE() as varchar(500))
+			Print '   Error_Line : ' + CAST(ERROR_LINE() as varchar)
+			Print '   Error_Message:' + CAST(ERROR_MESSAGE()as varchar(500))
+	End Catch
+
+
+	end
+	Else
+	  begin
+	     Print'Customer having less than three children. And number of children having' + cast( @Totalchildren as varchar(100))
+		 End
+    
+	Set @min = @min+1
+
+  end
+         --Insert into #dimcustomer_Result(Customerkey,Yearlyincome_OLD,Yearlyincome_new,Totalchildren)
+		  select d.CustomerKey,t.Yearlyincome,d.YearlyIncome,d.TotalChildren
+		  from dimcustomer_dup d
+		  Join #dimcustomer_dup t on t.Customerkey = d.CustomerKey
+
+
+  end
+  Go
+  use practicedb
+Select * from dimcustomer_dup
+select * into dimcustomer_dup from dimcustomer
+drop proc UpdatebyGender
+Exec UpdatebyGender 'M'
+Exec UpdatebyGender 'M,f'
+
+-------------------------------
+
+-- Update table using file
+
+if exists (Select null from dbo.SysObjects where name = N'UpdateTable_UsingFile' and type = N'P')
+Begin
+	Drop Proc UpdateTable_UsingFile
+End
+Go
+
+Create Procedure dbo.UpdateTable_UsingFile(
+                     @SourcePath Nvarchar(4000))
+As
+Begin
+
+Declare @SQL NVARCHAR(4000)
+
+--declare @SourcePath Nvarchar(4000)
+--Set @SourcePath = 'D:\SQLTrainingDataBase\Test.csv'
+
+
+if object_id('tempdb..#tmpFileData') is not null drop table #tmpFileData
+Create table #tmpFileData(EmployeeKey int,FirstName Varchar(400), LastName Varchar(400),Phone bigint)
+
+Set @sql = 'BULK INSERT #tmpFileData FROM ''' + @SourcePath + ''' WITH ( FIRSTROW = 2,DATAFILETYPE = ''char'',FIELDTERMINATOR = '','', ROWTERMINATOR =''\n'' )'  
+EXEC(@sql) 
+
+ --select * from #tmpFileData
+
+ BEGIN TRY
+	BEGIN TRAN
+
+			 Update e
+			 set e.Phone = t.Phone
+			 from dimemployee e
+			 Join #tmpFileData t on t.EmployeeKey = e.EmployeeKey
+
+Commit Tran
+
+End Try
+Begin Catch 
+			Rollback Tran
+			Print '   ERNumber: ' + CAST(ERROR_NUMBER() as varchar)
+			Print '   Error_Severity: ' + CAST(ERROR_SEVERITY() as varchar)
+			Print '   Error_State : ' + CAST(ERROR_STATE() as varchar)
+			Print '   Error_Procedure: ' + CAST(ERROR_PROCEDURE() as varchar(500))
+			Print '   Error_Line : ' + CAST(ERROR_LINE() as varchar)
+			Print '   Error_Message:' + CAST(ERROR_MESSAGE()as varchar(500))
+		End Catch
+
+--Output
+Select  *
+from DimEmployee e
+Join #tmpFileData t on t.EmployeeKey = e.EmployeeKey
+
+End
+go
+
+Exec UpdateTable_UsingFile @SourcePath = 'D:\SQLTrainingDataBase\Test.csv'
+
+--bulk load csv file to table
+
+
+if exists(select null from sys.objects where name='csvfileloadtable') 
+--print'there'
+drop table csvfileloadtable
+create table csvfileloadtable(Employeekey int,FirstName varchar(50), LastName varchar(50),Phone bigint)
+
+declare @sourcepath varchar(4000)
+set @sourcepath='D:\SQLTrainingDataBase\csvfileloadtotable.csv'
+
+declare @sql varchar(4000)--dynamic sql
+set @sql='BULK INSERT csvfileloadtable FROM '''+@sourcepath+''' with (FIRSTROW=2,DATAFILETYPE=''char'',FIELDTERMINATOR='','',ROWTERMINATOR=''\n'')'
+exec(@sql)
+
+select * from csvfileloadtable  
+sp_help csvfileloadtable 
+
+=====================================================================================================================================================
+--Tricky questions
+
+
+
+ 
+
+
+
+
+
+
+
+
 
 
 
